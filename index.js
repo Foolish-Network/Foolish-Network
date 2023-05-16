@@ -19,7 +19,7 @@ client.once("ready", async () => {
     for (const commandName in commands) {
         data.push(commands[commandName].data)
     }
-    await client.application.commands.set(data, '1066304695053856788');
+    await client.application.commands.set(data, '');
     console.log("Ready!");
 });
 
