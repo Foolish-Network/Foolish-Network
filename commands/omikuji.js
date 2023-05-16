@@ -4,7 +4,7 @@ module.exports = {
         description: "おみくじを引くことができます。",
     },
 	async execute(interaction) {
-        let arr = ["大吉", "吉", "中吉", "https://i.ibb.co/26LtJB6/Screenshot-2023-05-15-19-39-56.png", "末吉", "凶", "大凶"];
+        let arr = ["https://i.ibb.co/CwD67y5/5.png", "https://i.ibb.co/TqnpK7Q/4.png", "https://i.ibb.co/CP0P5n5/3.png", "https://i.ibb.co/GRhTSHh/image.png", "ttps://i.ibb.co/5rXXv7b/2.png", "https://i.ibb.co/W6y4YrN/1.png", "https://i.ibb.co/bBdQH47/image.png"];
         let weight = [15, 25, 20, 20, 15, 10, 5];
         let totalWeight = 0;
         for (var i = 0; i < weight.length; i++){
