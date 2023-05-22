@@ -19,7 +19,7 @@ client.once("ready", async () => {
     for (const commandName in commands) {
         data.push(commands[commandName].data)
     }
-    await client.application.commands.set(data, process.env.GUILD);
+    await client.application.commands.set(data, process.env.SERVER);
     console.log("Ready!");
 });
 
@@ -33,7 +33,7 @@ client.on("interactionCreate", async (interaction) => {
     } catch (error) {
         console.error(error);
         await interaction.reply({
-            content: 'There was an error while executing this command!',
+            content: 'コマンドの内部でエラーが発生しました。',
             ephemeral: true,
         })
     }
