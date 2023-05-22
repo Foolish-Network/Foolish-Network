@@ -4,13 +4,21 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node index.js",
+    "build": "npm install"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@discordjs/voice": "^0.16.0",
     "discord.js": "^13.16.0",
     "dotenv": "^16.0.3",
-    "fs": "^0.0.1-security"
+    "fs": "^0.0.2",
+    "n": "^9.1.0",
+    "ytdl-core": "^4.11.4"
+  },
+  "engines": {
+    "node": "16.x"
   }
 }
