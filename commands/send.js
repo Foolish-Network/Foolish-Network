@@ -24,7 +24,7 @@ module.exports = {
   },
   async execute(interaction = new CommandInteraction()) {
     try {
-      const isAdmin = interaction.member.roles.cache.some(role => role.id === process.env.ADMIN);
+      const isAdmin = interaction.user.id === process.env.ADMIN;
 
       if (!isAdmin) {
         await interaction.reply({
