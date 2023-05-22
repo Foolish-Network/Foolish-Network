@@ -1,13 +1,16 @@
 const { CommandInteraction, MessageEmbed, Permissions } = require('discord.js');
+const dotenv = require('dotenv');
+
+dotenv.config();
 
 module.exports = {
   data: {
     name: 'send',
-    description: '他のユーザーにDMを送信します。',
+    description: '指定されたユーザーにDMを送信します。',
     options: [
       {
         name: 'user',
-        description: '宛先ユーザー',
+        description: 'DMを送信するユーザー',
         type: 'USER',
         required: true,
       },
@@ -21,21 +24,35 @@ module.exports = {
   },
   async execute(interaction = new CommandInteraction()) {
     try {
-      const adminID = process.env.ADMIN;
-      const user = interaction.options.getUser('user');
-      const messageContent = interaction.options.getString('message');
+      const isAdmin = interaction.member.roles.cache.some(role => role.id === process.env.ADMIN);
 
-      if (interaction.user.id !== adminID) {
-        await interaction.reply('このコマンドは管理者のみが使用できます。');
+      if (!isAdmin) {
+        await interaction.reply({
+          content: 'このコマンドは管理者のみ使用できます。',
+          ephemeral: true,
+        });
         return;
       }
 
-      await user.send(messageContent);
+      const user = interaction.options.getUser('user');
+      const messageContent = interaction.options.getString('message');
 
-      await interaction.reply(`ユーザーにDMを送信しました: ${messageContent}`);
+      const embed = new MessageEmbed()
+        .setDescription(messageContent)
+        .setColor('#00ff00');
+
+      await user.send({ embeds: [embed] });
+
+      await interaction.reply({
+        content: `ユーザーにDMを送信しました: ${user}`,
+        ephemeral: true,
+      });
     } catch (error) {
       console.error(error);
-      await interaction.reply('DMの送信中にエラーが発生しました。');
+      await interaction.reply({
+        content: 'コマンドの実行中にエラーが発生しました。',
+        ephemeral: true,
+      });
     }
   },
 };
