@@ -3,6 +3,8 @@
 const { Permissions } = require('discord.js');
 const dotenv = require('dotenv');
 
+dotenv.config();
+
 module.exports = {
   data: {
     name: 'mute',
