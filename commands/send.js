@@ -37,11 +37,8 @@ module.exports = {
       const user = interaction.options.getUser('user');
       const messageContent = interaction.options.getString('message');
 
-      const embed = new MessageEmbed()
-        .setDescription(messageContent)
-        .setColor('#00ff00');
 
-      await user.send({ embeds: [embed] });
+      await user.send(messageContent);
 
       await interaction.reply({
         content: `ユーザーにDMを送信しました: ${user}`,
