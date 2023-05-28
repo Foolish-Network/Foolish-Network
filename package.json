@@ -1,5 +1,5 @@
 {
-  "name": "foolish-network",
+  "name": "foolish-seasons-bot",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -11,10 +11,10 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "axios": "^1.4.0",
     "discord.js": "^13.16.0",
     "dotenv": "^16.0.3",
-    "fs": "^0.0.2",
-    "axios": "^1.4.0"
+    "fs": "^0.0.2"
   },
   "engines": {
     "node": "16.x"
