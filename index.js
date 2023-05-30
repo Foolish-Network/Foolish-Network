@@ -14,12 +14,30 @@ for (const file of commandFiles) {
   commands[command.data.name] = command;
 }
 
+// 禁止ワードのファイルパス
+const prohibitedWordsFile = './prohibitedWords.json';
+
+// 禁止ワードのリストを読み込む関数
+function loadProhibitedWords() {
+  try {
+    const data = fs.readFileSync(prohibitedWordsFile, 'utf8');
+    return JSON.parse(data);
+  } catch (error) {
+    console.error(`禁止ワードの読み込み中にエラーが発生しました: ${error}`);
+    return [];
+  }
+}
+
+// 禁止ワードのリスト
+const prohibitedWords = loadProhibitedWords();
+
 client.once('ready', async () => {
   const data = [];
   for (const commandName in commands) {
     data.push(commands[commandName].data);
   }
   await client.application.commands.set(data, process.env.SERVER);
+  await client.application.commands.set(data, '1066304695053856788');
   console.log('Ready!');
 });
 
@@ -39,6 +57,33 @@ client.on('interactionCreate', async (interaction) => {
   }
 });
 
+client.on('messageCreate', async (message) => {
+  // メッセージが禁止ワードを含んでいるかチェックする
+  const hasProhibitedWord = prohibitedWords.some((word) =>
+    message.content.includes(word)
+  );
 
+  if (hasProhibitedWord) {
+    // メッセージを削除する
+    await message.delete();
+
+    // ユーザーに警告を送信する
+    const warningMessage = `不適切な発言が見られたため、該当メッセージを削除しました。これによるKICKやBANの措置はありません。`;
+
+    await message.author.send(warningMessage);
+  }
+});
+
+// 禁止ワードリストの自動更新
+fs.watchFile(prohibitedWordsFile, (curr, prev) => {
+  if (curr.mtime > prev.mtime) {
+    console.log('禁止ワードリストが更新されました。');
+
+    // 禁止ワードリストを再読込
+    const updatedProhibitedWords = loadProhibitedWords();
+    prohibitedWords.length = 0;
+    Array.prototype.push.apply(prohibitedWords, updatedProhibitedWords);
+  }
+});
 
 client.login(process.env.DISCORD_TOKEN);
