@@ -31,12 +31,27 @@ function loadProhibitedWords() {
 // 禁止ワードのリスト
 const prohibitedWords = loadProhibitedWords();
 
-client.once('ready', async () => {
+// システムのコマンド更新関数
+async function updateCommands() {
+  const guildId = process.env.SERVER;
+  const existingCommands = await client.application.commands.fetch(guildId);
+  
+  for (const existingCommand of existingCommands.values()) {
+    await client.application.commands.delete(existingCommand.id, guildId);
+    console.log(`Deleted command: ${existingCommand.name}`);
+  }
+  
   const data = [];
   for (const commandName in commands) {
     data.push(commands[commandName].data);
   }
-  await client.application.commands.set(data, process.env.SERVER);
+  
+  await client.application.commands.set(data, guildId);
+  console.log('Commands updated!');
+}
+
+client.once('ready', async () => {
+  await updateCommands();
   console.log('Ready!');
 });
 
@@ -44,7 +59,9 @@ client.on('interactionCreate', async (interaction) => {
   if (!interaction.isCommand()) {
     return;
   }
+  
   const command = commands[interaction.commandName];
+  
   try {
     await command.execute(interaction);
   } catch (error) {
