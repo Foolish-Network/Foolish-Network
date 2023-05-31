@@ -32,23 +32,25 @@ function loadProhibitedWords() {
 const prohibitedWords = loadProhibitedWords();
 
 // システムのコマンド更新関数
-async function updateCommands() {
-  const guildId = process.env.SERVER;
-  const existingCommands = await client.application.commands.fetch(guildId);
-  
-  for (const existingCommand of existingCommands.values()) {
-    await client.application.commands.delete(existingCommand.id, guildId);
-    console.log(`Deleted command: ${existingCommand.name}`);
+async function updateCommands(guildId) {
+  try {
+    const existingCommands = await client.application.commands.fetch(guildId);
+
+    for (const command of Object.values(commands)) {
+      const existingCommand = existingCommands.find((cmd) => cmd.name === command.data.name);
+      if (existingCommand) {
+        await client.application.commands.delete(existingCommand.id, guildId);
+        console.log(`Deleted command: ${existingCommand.name}`);
+      }
+
+      await client.application.commands.create(command.data, guildId);
+      console.log(`Created command: ${command.data.name}`);
+    }
+  } catch (error) {
+    console.error('Error updating commands:', error);
   }
-  
-  const data = [];
-  for (const commandName in commands) {
-    data.push(commands[commandName].data);
-  }
-  
-  await client.application.commands.set(data, guildId);
-  console.log('Commands updated!');
 }
+
 
 client.once('ready', async () => {
   await updateCommands();
