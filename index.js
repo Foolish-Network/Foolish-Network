@@ -40,21 +40,21 @@ async function updateCommands(guildId) {
       const existingCommand = existingCommands.find((cmd) => cmd.name === command.data.name);
       if (existingCommand) {
         await client.application.commands.delete(existingCommand.id, guildId);
-        console.log(`Deleted command: ${existingCommand.name}`);
+        console.log(`コマンドが削除されました: ${existingCommand.name}`);
       }
 
       await client.application.commands.create(command.data, guildId);
-      console.log(`Created command: ${command.data.name}`);
+      console.log(`コマンドが作成されました: ${command.data.name}`);
     }
   } catch (error) {
-    console.error('Error updating commands:', error);
+    console.error('コマンドの更新中にエラーが発生しました。:', error);
   }
 }
 
 
 client.once('ready', async () => {
   await updateCommands();
-  console.log('Ready!');
+  console.log('DiscordBotが起動しました');
 });
 
 client.on('interactionCreate', async (interaction) => {
