@@ -31,39 +31,20 @@ function loadProhibitedWords() {
 // 禁止ワードのリスト
 const prohibitedWords = loadProhibitedWords();
 
-// システムのコマンド更新関数
-async function updateCommands(guildId) {
-  try {
-    const existingCommands = await client.application.commands.fetch(guildId);
-
-    for (const command of Object.values(commands)) {
-      const existingCommand = existingCommands.find((cmd) => cmd.name === command.data.name);
-      if (existingCommand) {
-        await client.application.commands.delete(existingCommand.id, guildId);
-        console.log(`コマンドが削除されました: ${existingCommand.name}`);
-      }
-
-      await client.application.commands.create(command.data, guildId);
-      console.log(`コマンドが作成されました: ${command.data.name}`);
-    }
-  } catch (error) {
-    console.error('コマンドの更新中にエラーが発生しました。:', error);
-  }
-}
-
-
 client.once('ready', async () => {
-  await updateCommands();
-  console.log('DiscordBotが起動しました');
+  const data = [];
+  for (const commandName in commands) {
+    data.push(commands[commandName].data);
+  }
+  await client.application.commands.set(data, process.env.SERVER);
+  console.log('Ready!');
 });
 
 client.on('interactionCreate', async (interaction) => {
   if (!interaction.isCommand()) {
     return;
   }
-  
   const command = commands[interaction.commandName];
-  
   try {
     await command.execute(interaction);
   } catch (error) {
