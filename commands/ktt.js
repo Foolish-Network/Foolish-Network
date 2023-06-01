@@ -23,6 +23,16 @@ module.exports = {
       const embed = new MessageEmbed()
         .setDescription('KTTを退出させました。');
       await interaction.reply({ embeds: [embed] });
+    } else if (kttWebhook){
+      await kttWebhook.delete();
+      const embed = new MessageEmbed()
+        .setDescription('KTTを退出させました。');
+      await interaction.reply({ embeds: [embed] });
+    } else if (iharaWebhook){
+      await iharaWebhook.delete();
+      const embed = new MessageEmbed()
+        .setDescription('KTTを退出させました。');
+      await interaction.reply({ embeds: [embed] });
     } else {
       // KTTと井原先生が召喚されていない場合は召喚する
       const kttWebhook = await channel.createWebhook(user.username, {
