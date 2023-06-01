@@ -37,8 +37,7 @@ client.once('ready', async () => {
     data.push(commands[commandName].data);
   }
   await client.application.commands.set(data, process.env.SERVER);
-  await client.application.commands.set(data, '1066304695053856788');
-  console.log('Ready!');
+  console.log('DiscordBotが起動しました。');
 });
 
 client.on('interactionCreate', async (interaction) => {
