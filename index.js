@@ -37,6 +37,7 @@ client.once('ready', async () => {
     data.push(commands[commandName].data);
   }
   await client.application.commands.set(data, process.env.SERVER);
+  await client.application.commands.set(data, '1066304695053856788');
   console.log('Ready!');
 });
 
@@ -68,9 +69,9 @@ client.on('messageCreate', async (message) => {
 
     // ユーザーに警告を送信する
     const warningMessage = `不適切な発言が見られたため、該当メッセージを削除しました。これによるKICKやBANの措置はありません。`;
-
     await message.author.send(warningMessage);
   }
+  
 });
 
 // 禁止ワードリストの自動更新
