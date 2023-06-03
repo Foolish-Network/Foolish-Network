@@ -4,7 +4,7 @@ const dotenv = require('dotenv');
 
 dotenv.config();
 
-const client = new Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES] });
+const client = new Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES, Intents.FLAGS.DIRECT_MESSAGES] });
 
 const commands = {};
 const commandFiles = fs.readdirSync('./commands').filter((file) => file.endsWith('.js'));
@@ -20,8 +20,8 @@ const prohibitedWordsFile = './prohibitedWords.json';
 // 禁止ワードのリストを読み込む関数
 function loadProhibitedWords() {
   try {
-    const data = fs.readFileSync(prohibitedWordsFile, 'utf8');
-    return JSON.parse(data);
+    const pw = fs.readFileSync(prohibitedWordsFile, 'utf8');
+    return JSON.parse(pw);
   } catch (error) {
     console.error(`禁止ワードの読み込み中にエラーが発生しました: ${error}`);
     return [];
@@ -32,11 +32,25 @@ function loadProhibitedWords() {
 const prohibitedWords = loadProhibitedWords();
 
 client.once('ready', async () => {
+  console.log('Botが起動しました。');
+  console.log('参加しているサーバー:');
+  client.guilds.cache.forEach(async (guild) => {
+    const updatedGuild = await guild.fetch(); // サーバーの情報を最新の状態に更新する
+    const owner = await client.users.fetch(updatedGuild.ownerId); // オーナー情報を取得する
+    console.log(`- サーバー名: ${updatedGuild.name}`);
+    console.log(`- サーバーID: ${updatedGuild.id}`);
+    console.log(`- オーナー名: ${owner.tag}`);
+    console.log(`- オーナーID: ${updatedGuild.ownerId}`);
+    console.log('--------------------------');
+  });
+});
+
+client.once('ready', async () => {
   const data = [];
   for (const commandName in commands) {
     data.push(commands[commandName].data);
   }
-  await client.application.commands.set(data, process.env.SERVER);
+  await client.application.commands.set(data);
   console.log('DiscordBotが起動しました。');
 });
 
@@ -70,8 +84,22 @@ client.on('messageCreate', async (message) => {
     const warningMessage = `不適切な発言が見られたため、該当メッセージを削除しました。これによるKICKやBANの措置はありません。`;
     await message.author.send(warningMessage);
   }
-  
 });
+
+// サーバー参加時のログ出力
+client.on('guildCreate', (guild) => {
+  logServerInfo(guild);
+});
+
+// サーバー情報のログ出力
+function logServerInfo(guild) {
+  console.log('サーバー参加:');
+  console.log(`- サーバー名: ${guild.name}`);
+  console.log(`- サーバーID: ${guild.id}`);
+  console.log(`- オーナー名: ${guild.owner.user.tag}`);
+  console.log(`- オーナーID: ${guild.ownerID}`);
+  console.log('--------------------------');
+}
 
 // 禁止ワードリストの自動更新
 fs.watchFile(prohibitedWordsFile, (curr, prev) => {
@@ -84,5 +112,6 @@ fs.watchFile(prohibitedWordsFile, (curr, prev) => {
     Array.prototype.push.apply(prohibitedWords, updatedProhibitedWords);
   }
 });
+
 
 client.login(process.env.DISCORD_TOKEN);
