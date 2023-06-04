@@ -22,12 +22,17 @@ module.exports = {
     ],
   },
   async execute(interaction) {
+    const ownerId = interaction.guild.ownerId; // サーバーのオーナーのIDを取得
+    const authorizedUser = process.env.ADMIN; // .envファイルのADMIN変数の値を取得
+    const userId = interaction.user.id; // コマンドを実行したユーザーのIDを取得
+
+    if (userId !== authorizedUser && userId !== ownerId) {
+      await interaction.reply({ content: '権限がありません。', ephemeral: true });
+      return;
+    }
+
     const message = interaction.options.getString('message');
     const channel = interaction.options.getChannel('channel');
-    if (interaction.user.id !== process.env.ADMIN) {
-      await interaction.reply({ content: '権限がありません。', ephemeral: true });
-      return
-    }
 
     try {
       await channel.send(message);
