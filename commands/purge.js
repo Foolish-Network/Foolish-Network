@@ -18,7 +18,7 @@ module.exports = {
   async execute(interaction) {
     const authorizedUser = process.env.ADMIN; // .envファイルのADMIN変数の値を取得
     const userId = interaction.user.id; // コマンドを実行したユーザーのIDを取得
-    const isAdmin = userId === authorizedUser || userId === '932244204032233483';
+    const isAdmin = userId === authorizedUser;
 
     if (!isAdmin) {
       await interaction.reply({ content: '権限がありません。', ephemeral: true });
