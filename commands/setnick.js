@@ -25,8 +25,9 @@ module.exports = {
     const authorizedUser = process.env.ADMIN; // .envファイルのADMIN変数の値を取得
     const userId = interaction.user.id; // コマンドを実行したユーザーのIDを取得
     const isAdmin = userId === authorizedUser;
+    const isServerOwner = interaction.guild.ownerId === userId;
 
-    if (!isAdmin) {
+    if (!isAdmin && !isServerOwner) {
       await interaction.reply({ content: '権限がありません。', ephemeral: true });
       return;
     }
