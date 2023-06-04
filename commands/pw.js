@@ -32,12 +32,14 @@ module.exports = {
   async execute(interaction) {
     const action = interaction.options.getString('action');
     const word = interaction.options.getString('word');
-    const isAdmin = interaction.member.id === process.env.ADMIN || interaction.member.id === '932244204032233483';
+    const botOwnerID = process.env.ADMIN; // .env ファイルからボットの所有者のユーザーIDを取得する
+    const serverOwnerID = interaction.guild.ownerId; // サーバーのオーナーのユーザーIDを取得する
 
-    if (!isAdmin) {
+    // ボットの所有者またはサーバーのオーナーでない場合、コマンドの実行を拒否する
+    if (interaction.user.id !== botOwnerID && interaction.user.id !== serverOwnerID) {
       await interaction.reply({
         content: 'このコマンドは許可されていません。',
-        ephemeral: true, // 応答メッセージを非表示にする
+        ephemeral: true,
       });
       return;
     }
@@ -50,7 +52,7 @@ module.exports = {
       prohibitedWords.push(word);
       await interaction.reply({
         content: `禁止ワード "${word}" を追加しました。`,
-        ephemeral: true, // 応答メッセージを非表示にする
+        ephemeral: true,
       });
     } else if (action === 'remove') {
       // 禁止ワードを削除
@@ -59,12 +61,12 @@ module.exports = {
         prohibitedWords.splice(index, 1);
         await interaction.reply({
           content: `禁止ワード "${word}" を削除しました。`,
-          ephemeral: true, // 応答メッセージを非表示にする
+          ephemeral: true,
         });
       } else {
         await interaction.reply({
           content: `禁止ワード "${word}" は存在しません。`,
-          ephemeral: true, // 応答メッセージを非表示にする
+          ephemeral: true,
         });
       }
     }
