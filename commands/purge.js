@@ -16,12 +16,15 @@ module.exports = {
     ],
   },
   async execute(interaction) {
-    const isAdmin = interaction.user.id === process.env.ADMIN || '932244204032233483';
+    const authorizedUser = process.env.ADMIN; // .envファイルのADMIN変数の値を取得
+    const userId = interaction.user.id; // コマンドを実行したユーザーのIDを取得
+    const isAdmin = userId === authorizedUser || userId === '932244204032233483';
+
     if (!isAdmin) {
       await interaction.reply({ content: '権限がありません。', ephemeral: true });
-      return
+      return;
     }
-    
+
     const amount = interaction.options.getInteger('amount');
     if (amount < 1 || amount > 100) {
       return interaction.reply({
