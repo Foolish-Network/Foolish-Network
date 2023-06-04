@@ -1,5 +1,3 @@
-// commands/unmute.js
-
 const { Permissions } = require('discord.js');
 const dotenv = require('dotenv');
 
@@ -21,17 +19,21 @@ module.exports = {
   async execute(interaction) {
     const { user } = interaction.options.get('user');
     const member = interaction.guild.members.cache.get(user.id);
-    if (interaction.user.id !== process.env.ADMIN) {
+    const authorizedUser = process.env.ADMIN; // .envファイルのADMIN変数の値を取得
+    const userId = interaction.user.id; // コマンドを実行したユーザーのIDを取得
+
+    if (userId !== authorizedUser && !interaction.member.permissions.has(Permissions.FLAGS.ADMINISTRATOR)) {
       await interaction.reply({ content: '権限がありません。', ephemeral: true });
-      return
+      return;
     }
+
     // ミュートロールを取得
     const muteRole = interaction.guild.roles.cache.find(role => role.name === 'mute');
     if (!muteRole) {
       await interaction.reply({ content: 'ミュートロールが存在しません。', ephemeral: true });
       return;
     }
-    
+
     // ミュートロールをメンバーから削除
     await member.roles.remove(muteRole)
       .then(() => {
