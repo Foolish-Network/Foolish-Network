@@ -1,5 +1,3 @@
-// commands/mute.js
-
 const { Permissions } = require('discord.js');
 const dotenv = require('dotenv');
 
@@ -21,10 +19,14 @@ module.exports = {
   async execute(interaction) {
     const { user } = interaction.options.get('user');
     const member = interaction.guild.members.cache.get(user.id);
-    if (interaction.user.id !== process.env.ADMIN) {
+    const authorizedUser = process.env.ADMIN; // .envファイルのADMIN変数の値を取得
+    const userId = interaction.user.id; // コマンドを実行したユーザーのIDを取得
+
+    if (userId !== authorizedUser && !interaction.member.permissions.has(Permissions.FLAGS.ADMINISTRATOR)) {
       await interaction.reply({ content: '権限がありません。', ephemeral: true });
-      return
+      return;
     }
+
     // ミュートロールを取得または作成
     let muteRole = interaction.guild.roles.cache.find(role => role.name === 'mute');
     if (!muteRole) {
@@ -42,7 +44,7 @@ module.exports = {
         return;
       }
     }
-    
+
     // ミュートロールをメンバーに追加
     await member.roles.add(muteRole)
       .then(() => {
