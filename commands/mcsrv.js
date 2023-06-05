@@ -6,6 +6,22 @@ module.exports = {
     description: 'Minecraftサーバーのステータスを確認します。',
     options: [
       {
+        name: 'edition',
+        description: 'Minecraft Editionを選択してください。',
+        type: 'STRING',
+        required: true,
+        choices: [
+          {
+            name: 'Java Edition',
+            value: 'java',
+          },
+          {
+            name: 'Bedrock Edition',
+            value: 'bedrock',
+          },
+        ],
+      },
+      {
         name: 'address',
         description: 'サーバーアドレス',
         type: 'STRING',
@@ -14,10 +30,21 @@ module.exports = {
     ],
   },
   async execute(interaction) {
+    const edition = interaction.options.getString('edition');
     const address = interaction.options.getString('address');
 
     try {
-      const response = await axios.get(`https://api.mcsrvstat.us/2/${encodeURIComponent(address)}`);
+      let apiUrl;
+      if (edition === 'java') {
+        apiUrl = `https://api.mcsrvstat.us/2/${encodeURIComponent(address)}`;
+      } else if (edition === 'bedrock') {
+        apiUrl = `https://api.mcsrvstat.us/bedrock/2/${encodeURIComponent(address)}`;
+      } else {
+        await interaction.reply('無効なMinecraft Editionが選択されました。');
+        return;
+      }
+
+      const response = await axios.get(apiUrl);
       const data = response.data;
 
       if (data.online) {
