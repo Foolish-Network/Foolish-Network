@@ -32,57 +32,55 @@ module.exports = {
   async execute(interaction) {
     const action = interaction.options.getString('action');
     const word = interaction.options.getString('word');
-    const botOwnerID = process.env.ADMIN; // .env ファイルからボットの所有者のユーザーIDを取得する
-    const serverOwnerID = interaction.guild.ownerId; // サーバーのオーナーのユーザーIDを取得する
+    const guildId = interaction.guild.id;
+    const prohibitedWordsFile = `./pwlist/${guildId}.json`;
 
-    // ボットの所有者またはサーバーのオーナーでない場合、コマンドの実行を拒否する
-    if (interaction.user.id !== botOwnerID && interaction.user.id !== serverOwnerID) {
-      await interaction.reply({
-        content: 'このコマンドは許可されていません。',
-        ephemeral: true,
-      });
-      return;
-    }
+    // ファイルが存在しない場合は空の配列を使用する
+    const prohibitedWords = loadProhibitedWords(prohibitedWordsFile);
 
-    // 現在の禁止ワードリストを読み込む
-    const prohibitedWords = loadProhibitedWords();
-
-    if (action === 'add') {
-      // 禁止ワードを追加
-      prohibitedWords.push(word);
-      await interaction.reply({
-        content: `禁止ワード "${word}" を追加しました。`,
-        ephemeral: true,
-      });
-    } else if (action === 'remove') {
-      // 禁止ワードを削除
-      const index = prohibitedWords.indexOf(word);
-      if (index !== -1) {
-        prohibitedWords.splice(index, 1);
-        await interaction.reply({
-          content: `禁止ワード "${word}" を削除しました。`,
-          ephemeral: true,
-        });
-      } else {
-        await interaction.reply({
-          content: `禁止ワード "${word}" は存在しません。`,
-          ephemeral: true,
-        });
-      }
-    }
+if (action === 'add') {
+  // 禁止ワードを追加
+  if (prohibitedWords.includes(word)) {
+    await interaction.reply({
+      content: `禁止ワード "${word}" は既に存在します。`,
+      ephemeral: true,
+    });
+  } else {
+    prohibitedWords.push(word);
+    await interaction.reply({
+      content: `禁止ワード "${word}" を追加しました。`,
+      ephemeral: true,
+    });
+  }
+} else if (action === 'remove') {
+  // 禁止ワードを削除
+  const index = prohibitedWords.indexOf(word);
+  if (index !== -1) {
+    prohibitedWords.splice(index, 1);
+    await interaction.reply({
+      content: `禁止ワード "${word}" を削除しました。`,
+      ephemeral: true,
+    });
+  } else {
+    await interaction.reply({
+      content: `禁止ワード "${word}" は存在しません。`,
+      ephemeral: true,
+    });
+  }
+}
 
     // 禁止ワードリストを保存
-    saveProhibitedWords(prohibitedWords);
+    saveProhibitedWords(prohibitedWords, prohibitedWordsFile);
   },
 };
 
-// 禁止ワードのファイルパス
-const prohibitedWordsFile = './prohibitedWords.json';
-
 // 禁止ワードのリストを読み込む関数
-function loadProhibitedWords() {
+function loadProhibitedWords(filePath) {
   try {
-    const data = fs.readFileSync(prohibitedWordsFile, 'utf8');
+    if (!fs.existsSync(filePath)) {
+      return [];
+    }
+    const data = fs.readFileSync(filePath, 'utf8');
     return JSON.parse(data);
   } catch (error) {
     console.error(`禁止ワードの読み込み中にエラーが発生しました: ${error}`);
@@ -91,9 +89,9 @@ function loadProhibitedWords() {
 }
 
 // 禁止ワードリストを保存する関数
-function saveProhibitedWords(prohibitedWords) {
+function saveProhibitedWords(prohibitedWords, filePath) {
   try {
-    fs.writeFileSync(prohibitedWordsFile, JSON.stringify(prohibitedWords));
+    fs.writeFileSync(filePath, JSON.stringify(prohibitedWords));
   } catch (error) {
     console.error(`禁止ワードの保存中にエラーが発生しました: ${error}`);
   }
