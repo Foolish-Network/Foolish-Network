@@ -14,14 +14,18 @@ for (const file of commandFiles) {
   commands[command.data.name] = command;
 }
 
-// 禁止ワードのファイルパス
-const prohibitedWordsFile = './prohibitedWords.json';
+// 禁止ワードのディレクトリとファイルパス
+const pwlistDirectory = './pwlist';
+const getProhibitedWordsFile = (guildId) => `${pwlistDirectory}/${guildId}.json`;
 
 // 禁止ワードのリストを読み込む関数
-function loadProhibitedWords() {
+function loadProhibitedWords(filePath) {
   try {
-    const pw = fs.readFileSync(prohibitedWordsFile, 'utf8');
-    return JSON.parse(pw);
+    if (!fs.existsSync(filePath)) {
+      return [];
+    }
+    const data = fs.readFileSync(filePath, 'utf8');
+    return JSON.parse(data);
   } catch (error) {
     console.error(`禁止ワードの読み込み中にエラーが発生しました: ${error}`);
     return [];
@@ -29,7 +33,7 @@ function loadProhibitedWords() {
 }
 
 // 禁止ワードのリスト
-const prohibitedWords = loadProhibitedWords();
+const prohibitedWords = {};
 
 client.once('ready', async () => {
   console.log('Botが起動しました。');
@@ -42,6 +46,20 @@ client.once('ready', async () => {
     console.log(`- オーナー名: ${owner.tag}`);
     console.log(`- オーナーID: ${updatedGuild.ownerId}`);
     console.log('--------------------------');
+
+    // サーバーごとの禁止ワードリストを読み込む
+    const prohibitedWordsFile = getProhibitedWordsFile(updatedGuild.id);
+    prohibitedWords[updatedGuild.id] = loadProhibitedWords(prohibitedWordsFile);
+
+    // 禁止ワードリストの監視
+    fs.watchFile(prohibitedWordsFile, (curr, prev) => {
+      if (curr.mtime > prev.mtime) {
+        console.log('禁止ワードリストが更新されました。');
+
+        // 禁止ワードリストを再読込
+        prohibitedWords[updatedGuild.id] = loadProhibitedWords(prohibitedWordsFile);
+      }
+    });
   });
 });
 
@@ -72,8 +90,11 @@ client.on('interactionCreate', async (interaction) => {
 
 client.on('messageCreate', async (message) => {
   // メッセージが禁止ワードを含んでいるかチェックする
-  const hasProhibitedWord = prohibitedWords.some((word) =>
-    message.content.includes(word)
+  const guildId = message.guild.id;
+  const prohibitedWordsFile = getProhibitedWordsFile(guildId);
+  const prohibitedWordsForGuild = prohibitedWords[guildId] || loadProhibitedWords(prohibitedWordsFile);
+  const hasProhibitedWord = prohibitedWordsForGuild.some((word) =>
+    message.content.includes(word) || checkEmbedsForProhibitedWord(message, word)
   );
 
   if (hasProhibitedWord) {
@@ -85,6 +106,37 @@ client.on('messageCreate', async (message) => {
     await message.author.send(warningMessage);
   }
 });
+
+function checkEmbedsForProhibitedWord(message, word) {
+  if (message.embeds.length === 0) {
+    return false;
+  }
+
+  for (const embed of message.embeds) {
+    if (embed.description && embed.description.includes(word)) {
+      return true;
+    }
+
+    if (embed.title && embed.title.includes(word)) {
+      return true;
+    }
+
+    if (embed.fields && embed.fields.length > 0) {
+      for (const field of embed.fields) {
+        if (field.name && field.name.includes(word)) {
+          return true;
+        }
+
+        if (field.value && field.value.includes(word)) {
+          return true;
+        }
+      }
+    }
+  }
+
+  return false;
+}
+
 
 // サーバー参加時のログ出力
 client.on('guildCreate', (guild) => {
@@ -101,17 +153,9 @@ function logServerInfo(guild) {
   console.log('--------------------------');
 }
 
-// 禁止ワードリストの自動更新
-fs.watchFile(prohibitedWordsFile, (curr, prev) => {
-  if (curr.mtime > prev.mtime) {
-    console.log('禁止ワードリストが更新されました。');
-
-    // 禁止ワードリストを再読込
-    const updatedProhibitedWords = loadProhibitedWords();
-    prohibitedWords.length = 0;
-    Array.prototype.push.apply(prohibitedWords, updatedProhibitedWords);
-  }
-});
-
+// pwlistディレクトリが存在しない場合は作成する
+if (!fs.existsSync(pwlistDirectory)) {
+  fs.mkdirSync(pwlistDirectory);
+}
 
 client.login(process.env.DISCORD_TOKEN);
