@@ -122,34 +122,82 @@ client.on('messageCreate', async (message) => {
       // メッセージを削除する
       await message.delete();
 
-      // ユーザーに警告を送信する
-      const violatedWordsString = violatedWords.map(word => `\`${word}\``).join(", ");
-      const warningEmbed = {
-        type: "rich",
-        title: "警告",
-        description: "不適切な発言が見られたため、該当メッセージを削除しました。これによるKICKやBANの措置はありません。",
-        color: 0xFF0000,
-        fields: [
-          {
-            name: "違反したワード",
-            value: violatedWordsString || "違反したワードがありません"
-          }
-        ]
-      };
+      // ユーザーの違反回数を取得および保存
+      const violationCount = loadUserViolationCount(guildId, message.author.id);
+      saveUserViolationCount(guildId, message.author.id, violationCount + 1);
 
-      await message.author.send({ embeds: [warningEmbed] });
-      await message.member.timeout(10000);
+      if (violationCount + 1 >= 5) {
+        const noteEmbed = {
+  type: "rich",
+  title: "厳重注意",
+  description: "不適切な発言を複数行ったため、KICKされました。",
+  color: 0xFF0000,
+};
+        await message.author.send({ embeds: [noteEmbed] });
+        // ユーザーをキックする
+        await message.member.kick('違反行為');
+        console.log(`ユーザー ${message.author.tag} をキックしました。`);
+      } else {
+        // 警告メッセージを送信する
+        const violatedWordsString = violatedWords.map(word => `\`${word}\``).join(", ");
+        const warningEmbed = {
+          type: "rich",
+          title: "警告",
+          description: "不適切な発言が見られたため、該当メッセージを削除しました。このような発言が多く見られた場合、KICKされる可能性があります。",
+          color: 0xFF0000,
+          fields: [
+            {
+              name: "違反したワード",
+              value: violatedWordsString || "違反したワードがありません"
+            },
+            {
+              name: "違反回数",
+              value: `${violationCount + 1}回目の違反`
+            }
+          ]
+        };
+
+        await message.author.send({ embeds: [warningEmbed] });
+        await message.member.timeout(10000)
+      }
     }
   } catch (error) {
     console.error('メッセージ処理中にエラーが発生しました:', error);
     // エラーが発生した場合の処理を記述する（例: エラーログの出力や通知の送信）
   }
 });
+　
 
 
 // pwlistディレクトリが存在しない場合は作成する
 if (!fs.existsSync(pwlistDirectory)) {
   fs.mkdirSync(pwlistDirectory);
 }
+
+// 違反回数の保存先ディレクトリ
+const puserDataDirectory = './puser';
+
+// 違反回数の保存先ディレクトリが存在しない場合は作成する
+if (!fs.existsSync(puserDataDirectory)) {
+  fs.mkdirSync(puserDataDirectory);
+}
+
+// ユーザーごとの違反回数を保存する関数
+function saveUserViolationCount(guildId, userId, count) {
+  const userDataPath = `${puserDataDirectory}/${guildId}_${userId}.json`;
+  const userData = { count };
+  fs.writeFileSync(userDataPath, JSON.stringify(userData));
+}
+
+// ユーザーごとの違反回数を読み取る関数
+function loadUserViolationCount(guildId, userId) {
+  const userDataPath = `${puserDataDirectory}/${guildId}_${userId}.json`;
+  if (!fs.existsSync(userDataPath)) {
+    return 0;
+  }
+  const userData = fs.readFileSync(userDataPath, 'utf8');
+  return JSON.parse(userData).count;
+}
+
 
 client.login(process.env.DISCORD_TOKEN);
