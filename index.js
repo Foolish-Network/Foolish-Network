@@ -88,70 +88,64 @@ client.on('interactionCreate', async (interaction) => {
   }
 });
 
+const fullWidthToHalfWidth = (str) => {
+  return str.replace(/[！-～]/g, (char) => {
+    return String.fromCharCode(char.charCodeAt(0) - 0xfee0);
+  });
+};
+
+const removeSpacesAndNewlines = (str) => {
+  return str.replace(/[\s\n]/g, '');
+};
+
+const normalizeString = (str) => {
+  return fullWidthToHalfWidth(removeSpacesAndNewlines(str.toLowerCase()));
+};
+
 client.on('messageCreate', async (message) => {
-  // メッセージが禁止ワードを含んでいるかチェックする
-  const guildId = message.guild.id;
-  const prohibitedWordsFile = getProhibitedWordsFile(guildId);
-  const prohibitedWordsForGuild = prohibitedWords[guildId] || loadProhibitedWords(prohibitedWordsFile);
-  const hasProhibitedWord = prohibitedWordsForGuild.some((word) =>
-    message.content.includes(word) || checkEmbedsForProhibitedWord(message, word)
-  );
+  try {
+    // 管理者権限を持つユーザーは処理をスキップする
+    if (message.member.permissions.has("ADMINISTRATOR")) {
+      return;
+    }
+    // メッセージが禁止ワードを含んでいるかチェックする
+    const guildId = message.guild.id;
+    const prohibitedWordsFile = getProhibitedWordsFile(guildId);
+    const prohibitedWordsForGuild = prohibitedWords[guildId] || loadProhibitedWords(prohibitedWordsFile);
+    const normalizedProhibitedWords = prohibitedWordsForGuild.map(word => normalizeString(word));
+    const normalizedContent = normalizeString(message.content);
+    const violatedWords = normalizedProhibitedWords.filter(word =>
+      normalizedContent.includes(word)
+    );
 
-  if (hasProhibitedWord) {
-    // メッセージを削除する
-    await message.delete();
+    if (violatedWords.length > 0) {
+      // メッセージを削除する
+      await message.delete();
 
-    // ユーザーに警告を送信する
-    const warningMessage = `不適切な発言が見られたため、該当メッセージを削除しました。これによるKICKやBANの措置はありません。`;
-    await message.author.send(warningMessage);
+      // ユーザーに警告を送信する
+      const violatedWordsString = violatedWords.map(word => `\`${word}\``).join(", ");
+      const warningEmbed = {
+        type: "rich",
+        title: "警告",
+        description: "不適切な発言が見られたため、該当メッセージを削除しました。これによるKICKやBANの措置はありません。",
+        color: 0xFF0000,
+        fields: [
+          {
+            name: "違反したワード",
+            value: violatedWordsString || "違反したワードがありません"
+          }
+        ]
+      };
+
+      await message.author.send({ embeds: [warningEmbed] });
+      await message.member.timeout(10000);
+    }
+  } catch (error) {
+    console.error('メッセージ処理中にエラーが発生しました:', error);
+    // エラーが発生した場合の処理を記述する（例: エラーログの出力や通知の送信）
   }
 });
 
-function checkEmbedsForProhibitedWord(message, word) {
-  if (message.embeds.length === 0) {
-    return false;
-  }
-
-  for (const embed of message.embeds) {
-    if (embed.description && embed.description.includes(word)) {
-      return true;
-    }
-
-    if (embed.title && embed.title.includes(word)) {
-      return true;
-    }
-
-    if (embed.fields && embed.fields.length > 0) {
-      for (const field of embed.fields) {
-        if (field.name && field.name.includes(word)) {
-          return true;
-        }
-
-        if (field.value && field.value.includes(word)) {
-          return true;
-        }
-      }
-    }
-  }
-
-  return false;
-}
-
-
-// サーバー参加時のログ出力
-client.on('guildCreate', (guild) => {
-  logServerInfo(guild);
-});
-
-// サーバー情報のログ出力
-function logServerInfo(guild) {
-  console.log('サーバー参加:');
-  console.log(`- サーバー名: ${guild.name}`);
-  console.log(`- サーバーID: ${guild.id}`);
-  console.log(`- オーナー名: ${guild.owner.user.tag}`);
-  console.log(`- オーナーID: ${guild.ownerID}`);
-  console.log('--------------------------');
-}
 
 // pwlistディレクトリが存在しない場合は作成する
 if (!fs.existsSync(pwlistDirectory)) {
